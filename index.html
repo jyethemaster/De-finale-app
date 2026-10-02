@@ -28,14 +28,14 @@ nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 select{font:inherit;padding:5px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--fg)}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px}
 .sc{color:var(--mut);font-size:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.word{font-size:28px;letter-spacing:5px;text-align:center;margin:12px 0;font-weight:600;word-break:break-all}
+.word{font-size:28px;letter-spacing:.15em;text-align:center;margin:12px 0;font-weight:600;white-space:nowrap}
 .keys,.opts{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .keys button{width:34px;height:38px;padding:0}
 .b:disabled{opacity:.4;cursor:default}
 .b.ok{background:var(--ok);color:#fff;border-color:var(--ok)}.b.no{background:var(--no);color:#fff;border-color:var(--no)}
 .msg{text-align:center;min-height:26px;margin:10px 0;font-weight:600}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.mc{min-height:64px;font-size:14px;padding:4px;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid var(--bd);border-radius:10px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;word-break:break-word}
+.mc{min-height:64px;font-size:14px;padding:4px;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid var(--bd);border-radius:10px;background:var(--ac);color:#fff;cursor:pointer;font-family:inherit;word-break:normal;overflow-wrap:normal;overflow:hidden}
 .mc.up{background:var(--card);color:var(--fg)}.mc.done{background:var(--ok);color:#fff;border-color:var(--ok)}
 .q{font-size:22px;text-align:center;margin:16px 0}.q u{display:inline-block;min-width:60px;color:var(--ac)}
 .zone{min-height:54px;border:2px dashed var(--bd);border-radius:10px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
@@ -240,7 +240,18 @@ function chk(){AC.forEach(a=>{if(!G.ach.includes(a[0])&&a[3]()){G.ach.push(a[0])
 function good(b){combo++;const x=Math.round(b*(1+Math.min(combo-1,5)*.2)),L=lvl(),g=gs(cur),GL=lvf(g.xp,80,40)[0];G.xp+=x;G.corr++;g.xp+=x;g.c++;g.t++;g.b=Math.max(g.b,combo);if(lvl()>L)toast("🎉 Niveau "+lvl()+"!");else if(lvf(g.xp,80,40)[0]>GL)toast("🎮 "+cur+": niveau "+lvf(g.xp,80,40)[0]+"!");gchk();chk();save();hdr();return x}
 function bad(){combo=0;gs(cur).t++;hdr()}
 function won(){G.wins++;chk();save();hdr()}
-const app=document.getElementById("app"),nav=document.getElementById("nav"),h=s=>app.innerHTML=(TRK()?gm():"")+s;
+const app=document.getElementById("app"),nav=document.getElementById("nav"),h=s=>{app.innerHTML=(TRK()?gm():"")+s;fitAll()};
+/* shrink long words so they stay on one line */
+function fitAll(){
+ document.querySelectorAll(".word").forEach(e=>{e.style.fontSize="";let f=parseFloat(getComputedStyle(e).fontSize);while(e.scrollWidth>e.clientWidth+1&&f>10){f-=1;e.style.fontSize=f+"px"}});
+ const g=document.querySelector(".grid");
+ if(g&&g.querySelector(".mc")){/* choose 4, 3 or 2 columns so the longest word fits at a readable size; same for all cards */
+  const m=document.createElement("span");m.style.cssText="position:absolute;visibility:hidden;white-space:nowrap;font:10px system-ui,-apple-system,'Segoe UI',sans-serif";document.body.appendChild(m);
+  let need=0;g.querySelectorAll(".mc").forEach(b=>(b.dataset.t||"").split(/\s+/).forEach(w=>{m.textContent=w;need=Math.max(need,m.getBoundingClientRect().width)}));m.remove();
+  let n=4;for(const c of [4,3,2]){n=c;if(need<=(g.clientWidth-(c-1)*8)/c-10)break}
+  g.style.gridTemplateColumns="repeat("+n+",1fr)"}
+ document.querySelectorAll(".mc").forEach(b=>{const s=b.firstElementChild;if(!s)return;b.style.fontSize="";let f=parseFloat(getComputedStyle(b).fontSize);while(s.getBoundingClientRect().width>b.clientWidth-10&&f>7){f-=.5;b.style.fontSize=f+"px"}})}
+addEventListener("resize",fitAll);
 /* TIMER */
 const B=[0,20,12,8],TN=["Uit","Rustig","Normaal","Snel"];let T=0;
 try{T=(+localStorage.getItem("wt_t"))%4||0}catch(e){}
@@ -289,7 +300,7 @@ function mem(){
   const fin=done.size==n,st=mv<=n+3?3:mv<=n*2?2:1;if(fin||tout)tstop();
   h(`<div class="sc"><span>Zetten: ${mv} · Paren: ${done.size}/${n}</span><span><select id="md"><option value="v" ${mm=="v"?"selected":""}>Werkwoord ↔ voorzetsel</option><option value="e" ${mm=="e"?"selected":""}>Woord ↔ Engels</option></select></span></div>
   <div class="sc">${chSel()}<select id="lv">${["Makkelijk (4 paren)","Gemiddeld (6 paren)","Moeilijk (10 paren)"].map((o,i)=>`<option value="${i}" ${i==mlv?"selected":""}>${o}</option>`).join("")}</select></div>
-  ${tbar()}<div class="grid">${cards.map((c,k)=>{const up=open.includes(k)||done.has(c.i);return `<button class="mc ${up?"up":""} ${done.has(c.i)?"done":""}" data-n="${k}">${up?c.t:"?"}</button>`}).join("")}</div>
+  ${tbar()}<div class="grid">${cards.map((c,k)=>{const up=open.includes(k)||done.has(c.i);return `<button class="mc ${up?"up":""} ${done.has(c.i)?"done":""}" data-n="${k}" data-t="${esc(c.t)}"><span>${up?c.t:"?"}</span></button>`}).join("")}</div>
   <div class="msg">${fin?"Klaar! "+"⭐".repeat(st)+" 🎉":tout?"⏰ Tijd is om!":"Zoek de passende paren."}</div>
   <div class="row"><button class="b" id="nx">Opnieuw</button></div>`);bindCh();
   document.getElementById("md").onchange=e=>{mm=e.target.value;mem()};document.getElementById("lv").onchange=e=>{mlv=+e.target.value;mem()};
